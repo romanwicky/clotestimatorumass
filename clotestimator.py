@@ -16,7 +16,10 @@ from tkinter import filedialog
 # Create bounding boxes for all shapes
 # Only return the clot we want - User selection
 def clot_dfs():
+    # Notes
+    # cv2.selectRois() = multiple ROIs if needed from one image
     print("D")
+    print("Hey lol")
 
 
 # App Section
