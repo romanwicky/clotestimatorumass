@@ -5,6 +5,9 @@ from os import listdir
 from os.path import isfile, join
 from tkinter import filedialog
 from PIL import Image
+import cv2
+import numpy as np
+from matplotlib import pyplot as plt
 
 
 class Info:
@@ -28,6 +31,7 @@ info = Info("", 0, "")
 # Create bounding boxes for all shapes
 # Only return the clot we want - User selection
 def clot_dfs(path, arr):
+    # Create folder to hold finalized jpg of found clots
     newpath = path + '/tiffjpg/'
     if not os.path.exists(newpath):
         os.makedirs(newpath)
@@ -36,20 +40,28 @@ def clot_dfs(path, arr):
 
     # Save file as JPG
     name = str(newpath + arr[0]).rstrip(".tif")
-    im.save(name + '.jpg', 'JPEG')
-    # im.dtype is uint8 and not uint16 as desired.
-    # specifying dtype as uint16 does not correct this
-    # regions = cv2.selectROIs("Select Regions Of Interest", img, fromCenter=False)
-    #"http://creativemorphometrics.co.vu/blog/2014/08/05/automated-outlines-with-opencv-in-python/"
-    # Link on how to threshold images to get bounding boxes, should help make clots more clear
-    # output as png
-    # img = cv2.imread(path)
-    # cv2.normalize(img, dst=None, alpha=0, beta=65535, norm_type=cv2.NORM_MINMAX)
-    # cv2.imshow("IMG", img)
-    return 0
-    # Notes
-    # cv2.selectRois() = multiple ROIs if needed from one image
-    # Enter with no ROI = no clot found
+    jpg = name + '.jpg'
+    im.save(jpg, 'JPEG', quality=100)
+    impath = jpg
+    imjpg = cv2.imread(impath)
+    imjpg = cv2.resize(imjpg, (800, 800))
+
+    # cv2.selectROI("Frame", imtojpg, showCrosshair=True, fromCenter=False)
+    # https://stackoverflow.com/questions/52212239/opencv-plot-contours-in-an-image
+    # Grayscale image
+    imgtojpgbw = cv2.cvtColor(imjpg, cv2.COLOR_BGR2GRAY)
+
+    # cv2.selectROIs()
+    # From the ROIs, do image thresholding from website
+    # If there are no ROIS, then frame does not have a clot, go to next frame
+    # Then apply the contours to the original .jpg image
+    # Green Contour, Red Inside
+    # Fill contour: https://stackoverflow.com/questions/19222343/filling-contours-with-opencv-python
+    # Or thickness = cv2.FILLED
+    # Save file
+
+    cv2.imshow("Test", imgtojpgbw)
+
 
 def select_tif():
     # Open File
@@ -66,15 +78,12 @@ def select_tif():
 
 def process_tiff():
     clot_dfs(info.dirpath, info.listtiff)
-    info.counter += 1
-    app.lbl.config(text="Current Frame: " + str(info.counter))
-    print(info.listtiff)
-
 
 
 def next_frame():
     # go to next frame in tiff file
-    print("hey")
+    info.counter += 1
+    app.lbl.config(text="Current Frame: " + str(info.counter))
 
 
 # lambda: allows the methods to be used on demand, not just when the application launches
