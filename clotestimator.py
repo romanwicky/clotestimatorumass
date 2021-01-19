@@ -49,18 +49,36 @@ def clot_dfs(path, arr):
     # cv2.selectROI("Frame", imtojpg, showCrosshair=True, fromCenter=False)
     # https://stackoverflow.com/questions/52212239/opencv-plot-contours-in-an-image
     # Grayscale image
-    imgtojpgbw = cv2.cvtColor(imjpg, cv2.COLOR_BGR2GRAY)
+    # imgtojpgbw = cv2.cvtColor(imjpg, cv2.COLOR_BGR2GRAY)
+    croppedareas = cv2.selectROIs("Select Rois", imjpg, fromCenter=False)
+    cropnum = 0
+    for rect in croppedareas:
+        print(rect)
+        x1 = rect[0]
+        y1 = rect[1]
+        x2 = rect[2]
+        y2 = rect[3]
 
-    # cv2.selectROIs()
-    # From the ROIs, do image thresholding from website
-    # If there are no ROIS, then frame does not have a clot, go to next frame
-    # Then apply the contours to the original .jpg image
-    # Green Contour, Red Inside
-    # Fill contour: https://stackoverflow.com/questions/19222343/filling-contours-with-opencv-python
-    # Or thickness = cv2.FILLED
-    # Save file
+        imgcropped = imjpg[y1:y1+y2, x1:x1+x2]
+        cv2.imshow("crop " + str(cropnum), imgcropped)
+        cv2.imwrite(str(info.pathtoframesfolder) + "crop"+str(cropnum) + ".jpeg", imgcropped)
+        cropnum += 1
 
-    cv2.imshow("Test", imgtojpgbw)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    print("Got here")
+
+
+
+    # Contour the crops
+    # Open to Show Confirmation
+
+    # Then, add all the cropped contours into the original picture
+    # https://stackoverflow.com/questions/36533540/how-to-copy-a-cropped-image-onto-the-original-one-given-the-coordinates-of-the
+    # Use this link to add cropped back into original picture
+
+    # Save the now contoured image as a JPG
+    # Show picture for confirmation
 
 
 def select_tif():
