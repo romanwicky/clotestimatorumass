@@ -68,10 +68,39 @@ def clot_dfs(path, arr):
     cv2.destroyAllWindows()
     print("Got here")
 
-
-
     # Contour the crops
     # Open to Show Confirmation
+    for i in range(0, cropnum):
+        # Open the image
+        im = cv2.imread(info.pathtoframesfolder + "crop"+str(i) + ".jpeg")
+        # Convert to grayscale
+        imgray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+        blur = cv2.medianBlur(imgray, 25)
+        thresh = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 27, 6)
+
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3,3))
+        close = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel, iterations=1)
+        dilate = cv2.dilate(close, kernel, iterations=2)
+
+        cnts = cv2.findContours(dilate, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        cnts = cnts[0] if len(cnts) == 2 else cnts[1]
+        cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[:10]
+
+        # Going to have to tweak this value till it gives me what I want
+        min_area = 100
+        for c in cnts:
+            area = cv2.contourArea(c)
+            if area > min_area:
+                M = cv2.moments(c)
+                cX = int(M["m10"] / M["m00"])
+                cY = int(M["m01"] / M["m00"])
+                cv2.circle(im, (cX, cY), 20, (36, 255, 12),2)
+                x, y, w, h = cv2.boundingRect(c)
+            cv2.imshow('image', im)
+            cv2.waitKey(0)
+
+
+        cv2.waitKey(0)
 
     # Then, add all the cropped contours into the original picture
     # https://stackoverflow.com/questions/36533540/how-to-copy-a-cropped-image-onto-the-original-one-given-the-coordinates-of-the
