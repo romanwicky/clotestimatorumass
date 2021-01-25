@@ -31,15 +31,17 @@ info = Info("", 0, "")
 # Create bounding boxes for all shapes
 # Only return the clot we want - User selection
 def clot_dfs(path, arr):
+    placment = info.counter
+    curarr = arr[info.counter]
     # Create folder to hold finalized jpg of found clots
     newpath = path + '/tiffjpg/'
     if not os.path.exists(newpath):
         os.makedirs(newpath)
     info.pathtoframesfolder = newpath
-    im = Image.open(path + '\\' + arr[0])
+    im = Image.open(path + '\\' + curarr)
 
     # Save file as JPG
-    name = str(newpath + arr[0]).rstrip(".tif")
+    name = str(newpath + curarr).rstrip(".tif")
     jpg = name + '.jpg'
     im.save(jpg, 'JPEG', quality=100)
     impath = jpg
@@ -67,36 +69,30 @@ def clot_dfs(path, arr):
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
+    thresh = None
+
     for i in range(0, cropnum):
         im = cv2.imread(info.pathtoframesfolder + "crop"+str(i) + ".jpg")
         imgray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
-        thresh = cv2.threshold(imgray, 120, 255, cv2.THRESH_BINARY_INV)[1]
+        # Mess with the thresholding
+        thresh = cv2.threshold(imgray, 120, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C)[1]
         cnts, h = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-
-        lbl = '1'
-        c = 0
 
         for layer in zip(cnts, h[0]):
             contour = layer[0]
-            heir = layer[1]
-
-            if heir[1] >= 0:
-                lbl = '1'
-
-            if c % 2 == 0:
-                cv2.drawContours(im, [contour], -1, (36, 255, 12), 2)
-                x,y,w,h = cv2.boundingRect(contour)
-                cv2.putText(im, lbl, (x + 50, y + 70), cv2.FONT_HERSHEY_SIMPLEX, .7, (36,255,12), 3)
-                label = str(int(lbl) * -1)
-            c += 1
+            cv2.drawContours(im, [contour], -1, (36, 255, 12), 2)
 
     cv2.imshow("Thres", thresh)
     cv2.imshow("Image", im)
-    cv2.imwrite(info.pathtoframesfolder + 'thresh.jpg', thresh)
-    cv2.imwrite(info.pathtoframesfolder +  'image.jpg', im)
+    cv2.imwrite(info.pathtoframesfolder + 'thresh' + str(info.counter) + '.jpg', thresh)
+    cv2.imwrite(info.pathtoframesfolder + 'image' + str(info.counter) + '.jpg', im)
     cv2.waitKey(0)
 
     cv2.destroyAllWindows()
+
+    info.counter += 1
+    app.lbl.config(text="Current Frame: " + str(info.counter))
+    clot_dfs(info.dirpath, info.listtiff)
 
 
 def select_tif():
@@ -119,12 +115,6 @@ def process_tiff():
     clot_dfs(info.dirpath, info.listtiff)
 
 
-def next_frame():
-    # go to next frame in tiff file
-    info.counter += 1
-    app.lbl.config(text="Current Frame: " + str(info.counter))
-
-
 def popupmsg():
     popup = tk.Tk()
     popup.wm_title("!")
@@ -145,10 +135,6 @@ class App(tk.Tk):
 
         self.btn = tk.Button(self, text="Process TIFF Files",
                              command=lambda: process_tiff())
-        self.btn.pack(padx=120, pady=30)
-        self.btn.config(font=("Montserrat", 20))
-        self.btn = tk.Button(self, text="Next TIFF File",
-                             command=lambda: next_frame())
         self.btn.pack(padx=120, pady=30)
         self.btn.config(font=("Montserrat", 20))
         self.lbl = tk.Label(self, text="Current frame: " + str(info.counter))
