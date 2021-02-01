@@ -21,12 +21,13 @@ info = Info("", 0, "")
 # Algo 1:
 # Click on any pixel that is part of the clot, do a DFS for all pixels connected to that pixel
 # Add a threshold for max size of clot
-# Image thresholding to get rid of uneeded pixels that may interfere with DFS
+# Image thresholding to get rid of unneeded pixels that may interfere with DFS
 # Algo 2:
 # Select an ROI that contains the clot
 # Create bounding boxes for all shapes
 # Only return the clot we want - User selection
 def clot_finder(framearray):
+    houghTransform(framearray)
     im = Image.open(info.dirpath + '\\' + framearray[info.counter])
     # Save file as JPG
     name = str(info.pathtoframesfolder + framearray[info.counter]).rstrip(".tif")
@@ -78,6 +79,7 @@ def clot_finder(framearray):
         thresh = cv2.threshold(blur, 0, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C + cv2.THRESH_OTSU)[1]
         cnts, h = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
+        # Zip is used to connect cnts 1 to h 1... cnts 2 to h 2.. etc
         for layer in zip(cnts, h[0]):
             contour = layer[0]
             cv2.drawContours(im, [contour], -1, (36, 255, 12), 2)
@@ -169,7 +171,41 @@ class App(tk.Tk):
         self.lbl1.config(relief=tk.RAISED)
 
 
+def houghTransform(path):
+    im = Image.open(info.dirpath + '\\' + path[info.counter])
+    # Save file as JPG
+    name = str(info.pathtoframesfolder + path[info.counter]).rstrip(".tif")
+    jpg = name + '.jpg'
+    im.save(jpg, 'JPEG', quality=100)
+    impath = jpg
+    imjpg = cv2.imread(impath)
+    imjpg = cv2.resize(imjpg, (800, 800))
+
+    edges = cv2.Canny(imjpg, 50,150,apertureSize=3)
+
+    lines = cv2.HoughLines(edges, 1, np.pi/180, 200)
+    for rho, theta in lines[0]:
+        a = np.cos(theta)
+        b = np.sin(theta)
+        x0 = a * rho
+        y0 = b * rho
+        x1 = int(x0 + 1000 * (-b))
+        y1 = int(y0 + 1000 * (a))
+        x2 = int(x0 - 1000 * (-b))
+        y2 = int(y0 - 1000 * (a))
+
+        cv2.line(imjpg, (x1, y1), (x2, y2), (0, 0, 255), 2)
+
+    cv2.imwrite('houghlines3.jpg', imjpg)
+    cv2.imshow('Test', imjpg)
+    cv2.waitKey(0)
+
+
+
+
+
 if __name__ == "__main__":
     app = App()
     app.title("Clot Estimator - Roman Wicky van Doyer 2021")
     app.mainloop()
+
